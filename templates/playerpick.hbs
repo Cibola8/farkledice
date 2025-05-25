@@ -1,0 +1,24 @@
+<div class="scrollable">
+    <div class="flexrow">
+        <div><p>{{localize 'FARKLE.selectPlayers'}}</p></div>
+        <div class="flex0">
+            <button type="button" class="icon fas fa-plus" data-action="addPlayer" data-tooltip="FARKLE.addPlayer"></button>            
+        </div>
+    </div>
+    
+    <div class="flexcol">
+        <div class="flexrow playerHeader">
+            <div class="flex0" style="min-width:60px"></div>
+            <div>{{localize 'FARKLE.characterName'}}</div>
+            <div>{{localize 'FARKLE.representedBy'}}</div>
+            <div class="flex0"></div>
+        </div>
+        {{#each players as |player|}}
+            {{> modules/farkle/templates/playerrow.hbs player=player players=../players}}
+        {{/each}}
+    </div>
+    <div class="flexrow">
+        <button type="button" data-action="confirmSelection"><i class="fas fa-check"></i> {{localize 'ok'}}</button>
+        <button type="button" data-action="cancelSelection"><i class="fas fa-xmark"></i> {{localize 'cancel'}}</button>
+    </div>
+</div>

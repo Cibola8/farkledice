@@ -1,0 +1,31 @@
+
+{
+    "FARKLE": {
+        "currentPoints": "Punkte",
+        "start": "Neues Spiel",
+        "endTurn": "Zug beenden",
+        "roll": "Würfeln",
+        "close": "Schließen",
+        "winner": "{name} gewinnt Farkle mit {score} Punkten!",
+        "help": "Spielanleitung",
+        "turn": "ist am Zug",
+        "playerPick": "Spieler auswählen",
+        "noGame": "Noch Kein Spiel gestartet",
+        "farkleHint": "Spiele Farkle, indem du Würfel wirfst und Punkte sammelst. Halte Würfel, um sie für die nächste Runde zu behalten, oder würfle erneut, um mehr Punkte zu sammeln. Aber pass auf, wenn du keine Punkte erzielst, verlierst du deinen Zug!",
+        "selectPlayers": "Bitte wähle mindestens einen Spieler aus, um ein Spiel zu starten. Ziehe Akteure per Drag & Drop in die Liste oder klicke auf 'Spieler hinzufügen'.",
+        "characterName": "Charakter",
+        "representedBy": "Spieler",
+        "addPlayer": "Spieler hinzufügen",
+        "rolling": "{name} würfelt {count}W6...",
+        "loadedDice": "Die Würfel sind gezinkt! Du kannst sie in diesem Spiel verwenden.",
+        "noDiceKept": "Du kannst nur Würfeln, wenn du mindestens einen Würfel behältst.",
+        "hotDice": "Heiße Würfel, würfle alle 6 Würfel erneut!",
+        "diceAreBurning": "Die Würfel brennen! Du konntest alle Würfeln behalten und darfst nun erneut alle 6 Würfel werfen!",
+        "loadDice": "Erstelle gezinkte Würfel.",
+        "loadDiceDescription": "Erstelle gezinkte Würfel, die du in Farkle verwenden kannst. Diese Würfel können verwendet werden, wenn sie im Inventar des jeweiligen Spielers zu finden sind. Ziehe per Drag & Drop einen Gegenstand in das Farkle-Fenster, um ihn zu bearbeiten.",
+        "reset": "Zurücksetzen",
+        "setWeight": "Gewichtung festlegen",
+        "pickLoadedDice": "Gezinkte Würfel auswählen",
+        "pickLoadedDiceDescription": "Einer oder mehrere deiner Charaktere haben gezinkte Würfel in ihrem Inventar. Du kannst sie hier auswählen, um sie im Farkle-Spiel zu verwenden."
+    }
+}

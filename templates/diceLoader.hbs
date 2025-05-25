@@ -1,0 +1,29 @@
+<div>
+    <p>{{localize 'FARKLE.loadDiceDescription'}}</p>
+    {{#if item}}
+    <div class="flexrow">
+        <div class="flex0">
+            <img src="{{item.img}}" style="height:60px;min-width:60px;object-fit:contain"/>
+        </div>
+        <div class="flex1">
+            <b>{{item.name}}</b>            
+        </div>
+    </div>
+    <p>{{localize 'FARKLE.setWeight'}}:</p>
+    <div class="flexcol">
+        {{#each sides as |side|}}
+        <div class="flexrow">
+            <div class="farkleDie flex0 {{side.cssClass}}">
+                {{side.index}}
+            </div>
+            <input type="number" class="load" step="1" min="0" value="{{side.weight}}"/>
+        </div>
+        {{/each}}
+    </div>
+    <div class="flexrow" style="margin-top:20px">
+        <button type="button" data-action="loadDice"><i class="fas fa-check"></i> {{localize 'FARKLE.loadDice'}}</button>
+        <button type="button" data-action="clearLoaded"><i class="icon fas fa-xmark"></i> {{localize 'FARKLE.reset'}}</button>
+    </div>
+    {{/if}}
+    
+</div>

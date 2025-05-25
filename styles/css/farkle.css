@@ -1,0 +1,81 @@
+.farkleDie {
+    width: 50px;
+    min-width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background-color: black;
+    display: inline-block;
+    margin: 5px;
+    text-align: center;
+    line-height: 50px;
+    font-size: 24px;
+    border: 1px solid transparent;
+    color: white;
+    cursor: pointer;
+    filter: drop-shadow(2px 4px 6px black);
+
+    &:hover {
+        border-color: var(--color-warm-1);
+    }
+
+    &.burning {
+        background-color: firebrick;
+        color: black;
+    }
+
+    &.kept {
+        background-color: green;
+    }
+
+    &.kept.invalid {
+        background-color: red;
+    }
+
+    .waiting {
+        background-color: grey;
+        color: black;
+    }
+}
+
+.farkle-scorer {
+    h4 {
+        margin: 0;
+        padding: 0;
+    }
+
+    .careful {
+        background-color: var(--color-warm-1);
+        color: black;
+    }
+
+    .farkled {
+        background-color: var(--color-warm-2);
+        color: black;
+        padding: 5px;
+        border-radius: 5px;
+        font-weight: bold;
+        text-align: center;
+        box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    }
+
+    .pickableDie {
+        cursor: pointer;
+        border: 2px solid transparent;
+        
+        &.picked,
+        &:hover {
+            border-color: var(--color-warm-1);            
+        }
+    }
+}
+
+.theme-dark {
+    .farkleDie {
+        border: 1px solid white;
+        filter: drop-shadow(1px 2px 4px rgb(168, 166, 166));
+
+        &:hover {
+            border-color: var(--color-warm-1);
+        }
+    }
+}

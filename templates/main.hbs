@@ -1,0 +1,74 @@
+<div>
+    {{#if started}}
+    <div class="flexrow">
+        <img src="{{currentUserURL}}" class="userAvatar flex0" style="height:60px;width:60px;object-fit:contain"/>
+        <div class="icon flexcol">
+            <h4>{{currentPlayer.name}}</h4>
+            <small>{{currentUser.name}} {{localize 'FARKLE.turn'}}</small>
+        </div>
+        {{#if isFarkle}}
+        <div class="farkled flex0">
+            Farkle!
+        </div>
+        {{else if gameState.isHotDice}}
+        <div class="farkleDie burning flex0" data-tooltip="FARKLE.hotDice">
+            <i class="fas fa-fire"></i>
+        </div>
+        {{/if}}
+        
+    </div>
+    {{/if}}
+    <div class="flexrow">
+        {{#if started}}
+            {{#if allowedToRoll}}
+                <button type="button" class="{{ifThen myTurn '' 'hidden'}} icon fas fa-dice" data-action="rollDice" data-tooltip="FARKLE.roll"></button>
+            {{/if}}
+            {{#if myTurn}}                
+                <button type="button" class="icon fas fa-arrow-right" data-tooltip="FARKLE.endTurn" data-action="endTurn"></button>
+            {{else}}
+            {{#if isGm}}
+                <button type="button" class="icon fas careful fa-arrow-right" data-tooltip="FARKLE.endTurn" data-action="endTurn"></button>
+            {{/if}}
+            {{/if}}
+        {{else}}
+            <p>{{localize 'FARKLE.noGame'}}</p>
+        {{/if}}
+        {{#if isGm}}
+        <div class="flexrow" style="margin-left: auto;flex:auto;flex-grow:0;">            
+            <button type="button"  class="icon fas fa-flag-checkered" data-action="startFarkle"
+                data-tooltip="FARKLE.start"></button>
+            <button type="button" class="icon fas fa-xmark" data-action="endFarkle" data-tooltip="FARKLE.close"></button>            
+        </div>
+        {{/if}}
+    </div>
+    {{#if started}}
+    <div class="dieArea flexrow">
+        {{#each currentDice as |die index|}}
+        <div class="farkleDie {{die.cssClass}}" data-die="{{die.die}}" data-index="{{index}}"
+            data-action="keepDie">
+            {{die.die}}
+        </div>
+        {{/each}}
+    </div>
+    <div class="score">
+        <div class="flexrow">
+            <b style="flex: 2">{{localize 'FARKLE.currentPoints'}}</b>
+            <div>
+                <div class="currentPoints">{{currentTurnPoints}}</div>
+            </div>
+        </div>
+    </div>
+    <div class="scores">
+        {{#each gameState.users as |player|}}
+        <div class="playerScore flexrow">
+            <b style="flex: 2">{{player.name}}</b>
+            <div>
+                <div class="playerScoreValue">{{player.score}}</div>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{/if}}
+
+</div>

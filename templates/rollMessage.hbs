@@ -1,0 +1,12 @@
+<div>
+    <p>{{msg}}</p>
+    <div class="dice-tooltip">
+        <div class="dice">
+            <ol class="dice-rolls">
+                {{#each rolls as |roll|}}
+                <li class="roll die d6">{{roll.result}}</li>
+                {{/each}}
+            </ol>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,8 @@
+<div class="player flexrow" data-characteruuid="{{player.character_id}}">
+    <img src="{{player.avatar}}" class="userAvatar flex0" style="height:60px;width:60px;object-fit:contain"/>
+    <input type="text" class="playerName" value="{{player.characterName}}"/>
+    <select class="representedBy">
+        {{selectOptions players selected=player.id valueAttr="id" labelAttr="name"}}
+    </select>
+    <input type="checkbox" class="selectPlayer flex0" checked/>
+</div>
