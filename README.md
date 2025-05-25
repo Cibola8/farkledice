@@ -1,3 +1,7 @@
+![Version](https://img.shields.io/github/v/tag/Cibola8/farkledice?label=Version&style=flat-square&color=2577a1) ![Foundry Core Compatible Version](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2FCibola8%farkledice%master%2Fmodule.json&label=Foundry%20Core%20Compatible%20Version&query=$.compatibility.verified&style=flat-square&color=ff6400)
+
+
+
 # Farkle Dice Game Guide
 
 Bring a touch of medieval mischief to your game night with Farkle, the classic game of luck and risk—now as a quick-play module! Known from Kingdom Come: Deliverance, this ancient pastime is perfect for passing time in a tavern, settling scores over ale, or keeping your group entertained while someone's AFK.
