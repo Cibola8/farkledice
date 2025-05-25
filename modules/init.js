@@ -1,21 +1,23 @@
-Hooks.once("ready", () => {
-    game.modules.get("farkle").api = {
-        farkle: () => {
-            if (!game.modules.get("farkle").api.farkleScorer)
-                game.modules.get("farkle").api.farkleScorer = new FarkleScorer();
+const moduleName = "farkledice";
 
-            game.modules.get("farkle").api.farkleScorer.render(true);
+Hooks.once("ready", () => {
+    game.modules.get(moduleName).api = {
+        farkle: () => {
+            if (!game.modules.get(moduleName).api.farkleScorer)
+                game.modules.get(moduleName).api.farkleScorer = new FarkleScorer();
+
+            game.modules.get(moduleName).api.farkleScorer.render(true);
         },
     }    
 
-    game.socket.on('module.farkle', (data) => {
-        if (!game.modules.get("farkle").api.farkleScorer)
-            game.modules.get("farkle").api.farkleScorer = new FarkleScorer();
+    game.socket.on(`module.${moduleName}`, (data) => {
+        if (!game.modules.get(moduleName).api.farkleScorer)
+            game.modules.get(moduleName).api.farkleScorer = new FarkleScorer();
 
-        game.modules.get("farkle").api.farkleScorer.socketEvents(data);
+        game.modules.get(moduleName).api.farkleScorer.socketEvents(data);
     });
 
-    game.settings.registerMenu('farkle', 'farklestart', {
+    game.settings.registerMenu(moduleName, 'farklestart', {
         name: 'Farkle',
         label: 'FARKLE.start',
         hint: 'FARKLE.farkleHint',
@@ -72,7 +74,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         this._gameState = foundry.utils.mergeObject(this._gameState, value);
 
         if (sync) {
-            game.socket.emit('module.farkle', {
+            game.socket.emit(`module.${moduleName}`, {
                 type: 'sync',
                 payload: {
                     gameState: this._gameState,
@@ -129,7 +131,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         }
 
         this._gameState = foundry.utils.duplicate(this._initialState);
-        game.socket.emit('module.farkle', {
+        game.socket.emit(`module.${moduleName}`, {
             type: 'close',
             payload: { userId: game.user.id },
         });
@@ -176,7 +178,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         const actors = (await Promise.all(controlledActors.map(async(user) => {
             return await fromUuid(user.character_id);
         }))).filter(actor => {
-            return actor && actor.items.some(item => foundry.utils.getProperty(item, 'flags.farkle.loaded'));
+            return actor && actor.items.some(item => foundry.utils.getProperty(item, 'flags.farkledice.loaded'));
         });
         if(!actors.length) return;
 
@@ -288,7 +290,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             msg: game.i18n.format('FARKLE.rolling', { name: currentPlayer.name, count: newRollLength })
         }
 
-        const content = await foundry.applications.handlebars.renderTemplate("modules/farkle/templates/rollMessage.hbs", data);
+        const content = await foundry.applications.handlebars.renderTemplate("modules/farkledice/templates/rollMessage.hbs", data);
 
         await ChatMessage.create({
             content,
@@ -338,7 +340,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
     static PARTS = {
         main: {
             root: true,
-            template: "modules/farkle/templates/main.hbs",
+            template: "modules/farkledice/templates/main.hbs",
         }
     }
 
@@ -498,7 +500,7 @@ class FarkleHelp extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
     static PARTS = {
         main: {
-            template: "modules/farkle/templates/description.hbs",
+            template: "modules/farkledice/templates/description.hbs",
         }
     }
 }
@@ -521,8 +523,8 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
     static PARTS = {
         main: {
-            template: "modules/farkle/templates/playerPick.hbs",
-            templates: ["modules/farkle/templates/playerrow.hbs"]
+            template: "modules/farkledice/templates/playerPick.hbs",
+            templates: ["modules/farkledice/templates/playerrow.hbs"]
         }
     }
 
@@ -542,7 +544,7 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
                 character_id: player.dataset.characteruuid
             })
         }
-        game.modules.get("farkle").api.farkleScorer.resetFarkle(users);
+        game.modules.get(moduleName).api.farkleScorer.resetFarkle(users);
         this.close();
     }
 
@@ -579,7 +581,7 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
     async _addRow(player) {
         const addAfter = this.element.querySelector('.player:last-child');
 
-        const newRow = await foundry.applications.handlebars.renderTemplate("modules/farkle/templates/playerrow.hbs", {
+        const newRow = await foundry.applications.handlebars.renderTemplate("modules/farkledice/templates/playerrow.hbs", {
             players: this.availablePlayers,
             player
         });
@@ -643,7 +645,7 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
 class FarkleStart extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
     async render(options) {
-        game.modules.get("farkle").api.farkle()
+        game.modules.get(moduleName).api.farkle()
     }
 }
 
@@ -664,14 +666,14 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
     static PARTS = {
         main: {
-            template: "modules/farkle/templates/diceLoader.hbs",
+            template: "modules/farkledice/templates/diceLoader.hbs",
         }
     }
 
     async _prepareContext(options) {
         const data = await super._prepareContext(options);
         data.item = this.item;
-        const loaded = this.item?.flags?.farkle?.loaded || [];
+        const loaded = this.item?.flags?.farkledice?.loaded || [];
         const weigths = loaded.length ? loaded : [1,1,1,1,1,1];
         data.sides = weigths.map((weight, index) => {
             return {
@@ -685,7 +687,7 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
     }
 
     static async clearLoaded(_ev, target) {
-        await this.item.update({ [`flags.-=farkle`]: null });
+        await this.item.update({ [`flags.-=farkledice`]: null });
         this.render(true);
     }
 
@@ -693,7 +695,7 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
         const loads = this.element.querySelectorAll('.load')
         const values = Array.from(loads).map(x => parseInt(x.value) || 1);        
         await this.item.update({
-            [`flags.farkle.loaded`]: values
+            [`flags.farkledice.loaded`]: values
         });
         ui.notifications.info(game.i18n.localize("FARKLE.loadedDice"));
         this.render(true);
@@ -761,7 +763,7 @@ class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin
 
     static PARTS = {
         main: {
-            template: "modules/farkle/templates/pickLoadedDice.hbs",
+            template: "modules/farkledice/templates/pickLoadedDice.hbs",
         }
     }
 
@@ -777,7 +779,7 @@ class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin
                 name: actor.name,
                 img: actor.img,
                 uuid: actor.uuid,
-                loaded: actor.items.filter(item => foundry.utils.getProperty(item, 'flags.farkle.loaded')).map(item => {
+                loaded: actor.items.filter(item => foundry.utils.getProperty(item, 'flags.farkledice.loaded')).map(item => {
                     return {
                         uuid: item.uuid,
                         name: item.name,
@@ -815,7 +817,7 @@ class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin
 
             
             const loadedDice = items.map(item => {
-                return item.flags.farkle.loaded || [1, 1, 1, 1, 1, 1];
+                return item.flags.farkledice.loaded || [1, 1, 1, 1, 1, 1];
             });
             const loadedWithIndex = [];
             for (let i = 0; i < loadedDice.length; i++) {
@@ -828,7 +830,7 @@ class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin
 
             cheats[uuid] = loadedWithIndex;
         }
-        game.modules.get("farkle").api.farkleScorer.cheats = cheats;
+        game.modules.get(moduleName).api.farkleScorer.cheats = cheats;
         this.close();
     }
 }

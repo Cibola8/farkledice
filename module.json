@@ -1,10 +1,10 @@
 {
     "title": "Farkle - A Dice Game",
     "description": "Bring a touch of medieval mischief to your game night with Farkle, the classic game of luck and risk—now as a quick-play module! Known from Kingdom Come: Deliverance, this ancient pastime is perfect for passing time in a tavern, settling scores over ale, or keeping your group entertained while someone’s AFK. Easy to learn, fast to play, and endlessly addictive—roll the dice, press your luck, and don’t farkle out! Ideal for Foundry VTT side sessions, tavern downtime, or in-game gambling scenes.",
-    "version": "1.0.0",
-    "url": "https://github.com/Cibola8/farkle",
-    "manifest": "https://raw.githubusercontent.com/Cibola8/farkle/foundry13/module.json",
-    "download": "https://github.com/Cibola8/farkle/releases/download/1.0.0/farkle-1.0.0.zip",
+    "version": "1.0.1",
+    "url": "https://github.com/Cibola8/farkledice",
+    "manifest": "https://raw.githubusercontent.com/Cibola8/farkledice/foundry13/module.json",
+    "download": "https://github.com/Cibola8/farkle/releases/download/1.0.1/farkledice-1.0.1.zip",
     "languages": [
         {
             "lang": "de",
@@ -20,7 +20,7 @@
     "esmodules": [
         "modules/init.js"
     ],
-    "id": "farkle",
+    "id": "farkledice",
     "authors": [
         {
             "name": "Cibola8"
