@@ -8,7 +8,7 @@ Hooks.once("ready", () => {
 
             game.modules.get(moduleName).api.farkleScorer.render(true);
         },
-    }    
+    }
 
     game.socket.on(`module.${moduleName}`, (data) => {
         if (!game.modules.get(moduleName).api.farkleScorer)
@@ -85,7 +85,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         const event = this._gameState.event;
         if (event) {
             this._gameState.event = null;
-            this.handleEvent(event);            
+            this.handleEvent(event);
         }
         this.render(true);
     }
@@ -170,17 +170,40 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         }
     }
 
+    async showDiceSoNice(roll) {
+        if (game.modules.get('dice-so-nice')?.active && game.dice3d) {
+            const rollMode = game.settings.get('core', 'rollMode');
+            let whisper = null;
+            let blind = false;
+            switch (rollMode) {
+                case 'blindroll':
+                    blind = true;
+                    whisper = game.users.filter((user) => user.isGM).map((x) => x.id);
+                    break;
+                case 'gmroll':
+                    whisper = game.users.filter((user) => user.isGM).map((x) => x.id);
+                    break;
+                case 'selfroll':
+                    whisper = [];
+                    break;
+            }
+            const promise = game.dice3d.showForRoll(roll, game.user, true, whisper, blind);
+            if (!game.settings.get('dice-so-nice', 'immediatelyDisplayChatMessages')) await promise;
+        }
+    }
+
+
     async #startEvent() {
         this.cheats = {};
         const controlledActors = this.gameState.users.filter(user => user.id === game.user.id)
         if (controlledActors.length === 0) return;
-        
-        const actors = (await Promise.all(controlledActors.map(async(user) => {
+
+        const actors = (await Promise.all(controlledActors.map(async (user) => {
             return await fromUuid(user.character_id);
         }))).filter(actor => {
             return actor && actor.items.some(item => foundry.utils.getProperty(item, 'flags.farkledice.loaded'));
         });
-        if(!actors.length) return;
+        if (!actors.length) return;
 
         new PickLoadedDice(actors).render(true);
     }
@@ -207,7 +230,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
 
         if (keptDice.length === this.gameState.currentDice.length) {
             const isHotDice = this.isHotDice(this.gameState.currentDice)
-            
+
             if (isHotDice) {
                 newState.remainingRolls = 3;
                 newState.rollLength = 6;
@@ -231,23 +254,23 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
     async roll(rollLength, user) {
         const loadedDice = this.cheats[user.character_id];
         let roll;
-        if(!loadedDice) {
-            roll = await new Roll(`${rollLength}d6`).evaluate()  
+        if (!loadedDice) {
+            roll = await new Roll(`${rollLength}d6`).evaluate()
         } else {
             const pickLoadedDice = loadedDice.filter((die, index) => {
                 return !this.gameState.keepIndex.includes(index);
             });
             const dies = Array(rollLength).fill('1d6');
-            for(let i = 0; i < dies.length; i++) {
-                if(loadedDice[i]) {
+            for (let i = 0; i < dies.length; i++) {
+                if (loadedDice[i]) {
                     const weightSum = loadedDice[i].reduce((sum, current) => sum + current, 0);
                     dies[i] = `1d${weightSum}`;
                 }
             }
-                       
+
             roll = await new Roll(dies.join('+')).evaluate();
         }
-        
+
         const finalResults = [];
         let index = 0;
         for (let term of roll.terms) {
@@ -257,12 +280,14 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                     let result = die.result;
                     if (currentLoadedDice) {
                         // map result to loaded dice weights 
-                       let mappedRoll = 1;
-                       while (mappedRoll <= currentLoadedDice.length && currentLoadedDice[mappedRoll - 1] < result) {
+                        let mappedRoll = 1;
+                        while (mappedRoll <= currentLoadedDice.length && currentLoadedDice[mappedRoll - 1] < result) {
                             mappedRoll++;
                         }
-                        result = mappedRoll;                         
+                        result = mappedRoll;
                     }
+                    die.result = result;
+                    die.faces = 6
                     finalResults.push({
                         result: result,
                         loaded: !!currentLoadedDice
@@ -271,11 +296,12 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                 index += 1;
             }
         }
+        this.showDiceSoNice(roll);
         return finalResults;
     }
 
     static async rollDice(_ev, _target) {
-        if(this.gameState.keptDice.length === 0 && this.gameState.currentDice.length !== 0) {
+        if (this.gameState.keptDice.length === 0 && this.gameState.currentDice.length !== 0) {
             ui.notifications.warn(game.i18n.localize("FARKLE.noDiceKept"));
             return;
         }
@@ -350,7 +376,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         const selectedIndexes = throws.map((die, index) => index);
         const score = this.scoreCalc(selectedIndexes, throws);
         if (score.usedIndexes.length === throws.length && score.score > 0) return score.score;
-        
+
         return false;
     }
 
@@ -674,15 +700,17 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
         const data = await super._prepareContext(options);
         data.item = this.item;
         const loaded = this.item?.flags?.farkledice?.loaded || [];
-        const weigths = loaded.length ? loaded : [1,1,1,1,1,1];
+        const weigths = loaded.length ? loaded : [1, 1, 1, 1, 1, 1];
+        const weightSum = weigths.reduce((sum, current) => sum + current, 0);
         data.sides = weigths.map((weight, index) => {
             return {
                 index: index + 1,
                 weight,
-                cssClass: weight > 1 ? 'load' : ''
+                cssClass: weight > 1 ? 'load' : '',
+                probability: (weight / weightSum * 100).toFixed(1),
             }
         })
-
+        console.log(data)
         return data;
     }
 
@@ -693,7 +721,7 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
     static async loadDice(_ev, target) {
         const loads = this.element.querySelectorAll('.load')
-        const values = Array.from(loads).map(x => parseInt(x.value) || 1);        
+        const values = Array.from(loads).map(x => parseInt(x.value) || 1);
         await this.item.update({
             [`flags.farkledice.loaded`]: values
         });
@@ -725,6 +753,20 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
                 drop: this._onDrop.bind(this)
             }
         }).bind(this.element);
+
+        this.element.querySelectorAll('.load').forEach(input => {
+            input.addEventListener('change', (ev) => {
+                const allWeights = Array.from(this.element.querySelectorAll('.load')).map(x => parseInt(x.value) || 1);
+                const weightSum = allWeights.reduce((sum, current) => sum + current, 0);
+
+                this.element.querySelectorAll('.load').forEach((el, index) => {
+                    const newWeight = parseInt(el.value) || 1;
+                    const newProbability = (newWeight / weightSum * 100).toFixed(1);
+                    const parent = el.closest('.flexrow');
+                    parent.querySelector('.probability').textContent = `${newProbability} %`; 
+                })
+            });
+        });
     }
 
     async _onDragStart(event) {
@@ -741,9 +783,9 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
         const item = await Item.implementation.fromDropData(dragData);
 
         this.item = item;
-        this.render(true);   
+        this.render(true);
     }
-    
+
 }
 
 class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
@@ -815,7 +857,7 @@ class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin
                 return await fromUuid(die.dataset.die);
             }));
 
-            
+
             const loadedDice = items.map(item => {
                 return item.flags.farkledice.loaded || [1, 1, 1, 1, 1, 1];
             });

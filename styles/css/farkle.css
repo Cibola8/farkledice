@@ -67,6 +67,12 @@
             border-color: var(--color-warm-1);            
         }
     }
+
+    .probability {
+        font-weight: bold;
+        flex: 0 0 60px;
+        text-align: center;
+    }
 }
 
 .theme-dark {

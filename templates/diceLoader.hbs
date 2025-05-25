@@ -16,7 +16,10 @@
             <div class="farkleDie flex0 {{side.cssClass}}">
                 {{side.index}}
             </div>
-            <input type="number" class="load" step="1" min="0" value="{{side.weight}}"/>
+            <input type="number" class="load" step="1" min="0" value="{{side.weight}}" data-index="{{side.index}}"/>
+            <div class="probability">
+                {{side.probability}}&nbsp;%
+            </div>
         </div>
         {{/each}}
     </div>
