@@ -1,5 +1,4 @@
-![Version](https://img.shields.io/github/v/tag/Cibola8/farkledice?label=Version&style=flat-square&color=2577a1) ![Foundry Core Compatible Version](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2FCibola8%farkledice%2master%2Fmodule.json&label=Foundry%20Core%20Compatible%20Version&query=$.compatibility.verified&style=flat-square&color=ff6400)
-
+![Version](https://img.shields.io/github/v/tag/Cibola8/farkledice?label=Version&style=flat-square&color=2577a1) ![Foundry Core Compatible Version](https://img.shields.io/badge/dynamic/json.svg?url=https%3A%2F%2Fraw.githubusercontent.com%2FCibola8%2Ffarkledice%2Fmaster%2Fmodule.json&label=Foundry%20Core%20Compatible%20Version&query=$.compatibility.verified&style=flat-square&color=ff6400)
 
 
 # Farkle Dice Game Guide
