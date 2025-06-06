@@ -710,7 +710,6 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
                 probability: (weight / weightSum * 100).toFixed(1),
             }
         })
-        console.log(data)
         return data;
     }
 
