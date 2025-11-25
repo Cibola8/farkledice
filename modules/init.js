@@ -125,7 +125,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         if (users.some(user => user.score)) {
             const winner = users.reduce((prev, current) => (prev.score > current.score) ? prev : current);
             const winnerMessage = game.i18n.format("FARKLE.winner", { name: winner.name, score: winner.score });
-            const content = `<p>${winnerMessage}</p><p><ul>${users.map(x => `<li><b>${x.name}</b>: ${x.score}</li>`)}</ul></p>`
+            const content = `<p>${winnerMessage}</p><p><ul>${users.map(x => `<li><b>${x.name}</b>: ${x.score}</li>`).join('')}</ul></p>`
             const chatMessage = { content };
             ChatMessage.create(chatMessage);
         }
@@ -252,7 +252,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
     }
 
     async roll(rollLength, user) {
-        const loadedDice = this.cheats[user.character_id];
+        const loadedDice = this.cheats?.[user.character_id];
         let roll;
         if (!loadedDice) {
             roll = await new Roll(`${rollLength}d6`).evaluate()
@@ -279,10 +279,15 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                 for (let die of term.results) {
                     let result = die.result;
                     if (currentLoadedDice) {
-                        // map result to loaded dice weights 
+                        // map result to loaded dice weights using cumulative weights
                         let mappedRoll = 1;
-                        while (mappedRoll <= currentLoadedDice.length && currentLoadedDice[mappedRoll - 1] < result) {
-                            mappedRoll++;
+                        let cumulativeWeight = 0;
+                        for (let i = 0; i < currentLoadedDice.length; i++) {
+                            cumulativeWeight += currentLoadedDice[i];
+                            if (result <= cumulativeWeight) {
+                                mappedRoll = i + 1;
+                                break;
+                            }
                         }
                         result = mappedRoll;
                     }
@@ -398,7 +403,14 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             data.currentPlayer = this.gameState.users[this.gameState.userTurn];
             data.currentUser = game.users.get(data.currentPlayer?.id);
             data.currentTurnPoints = currentScore.score + data.gameState.score;
-            const character = data.currentPlayer?.character_id ? await fromUuid(data.currentPlayer.character_id) : data.currentUser?.character;
+            let character = data.currentUser?.character;
+            if (data.currentPlayer?.character_id) {
+                try {
+                    character = await fromUuid(data.currentPlayer.character_id) || character;
+                } catch (e) {
+                    console.warn(`Farkle: Could not load character from UUID: ${data.currentPlayer.character_id}`);
+                }
+            }
             data.currentUserURL = character?.img || data.currentUser?.avatar;
             data.allowedToRoll = this.gameState.remainingRolls > 0;
             data.myTurn = this.myTurn;
@@ -544,12 +556,13 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
             confirmSelection: this.confirmSelection,
             cancelSelection: this.cancelSelection,
             addPlayer: this.addPlayer,
+            removePlayer: this.removePlayer,
         }
     }
 
     static PARTS = {
         main: {
-            template: "modules/farkledice/templates/playerPick.hbs",
+            template: "modules/farkledice/templates/playerpick.hbs",
             templates: ["modules/farkledice/templates/playerrow.hbs"]
         }
     }
@@ -604,6 +617,13 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
         });
     }
 
+    static removePlayer(_ev, target) {
+        const playerRow = target.closest('.player');
+        if (playerRow) {
+            playerRow.remove();
+        }
+    }
+
     async _addRow(player) {
         const addAfter = this.element.querySelector('.player:last-child');
 
@@ -651,7 +671,7 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
     async _onDrop(event) {
         const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
 
-        if (!dragData.type == 'Actor') return;
+        if (dragData.type !== 'Actor') return;
 
         const actor = await Actor.implementation.fromDropData(dragData);
 
@@ -700,9 +720,18 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
         const data = await super._prepareContext(options);
         data.item = this.item;
         const loaded = this.item?.flags?.farkledice?.loaded || [];
-        const weigths = loaded.length ? loaded : [1, 1, 1, 1, 1, 1];
-        const weightSum = weigths.reduce((sum, current) => sum + current, 0);
-        data.sides = weigths.map((weight, index) => {
+        // Always ensure exactly 6 sides with valid weights (minimum 0)
+        const weights = Array(6).fill(0).map((_, i) => {
+            const val = parseInt(loaded[i]) || 0;
+            return Math.max(0, val);
+        });
+        // If all weights are 0, default to equal weights
+        const hasAnyWeight = weights.some(w => w > 0);
+        if (!hasAnyWeight) {
+            weights.fill(1);
+        }
+        const weightSum = weights.reduce((sum, current) => sum + current, 0);
+        data.sides = weights.map((weight, index) => {
             return {
                 index: index + 1,
                 weight,
@@ -719,8 +748,23 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
     }
 
     static async loadDice(_ev, target) {
-        const loads = this.element.querySelectorAll('.load')
-        const values = Array.from(loads).map(x => parseInt(x.value) || 1);
+        const loads = this.element.querySelectorAll('.load');
+        // Initialize array with 6 zeros
+        const values = Array(6).fill(0);
+        // Map each input to its correct index using data-index attribute (1-based)
+        loads.forEach(input => {
+            const index = parseInt(input.dataset.index) - 1; // Convert to 0-based
+            if (index >= 0 && index < 6) {
+                const val = parseInt(input.value);
+                values[index] = isNaN(val) ? 0 : Math.max(0, val);
+            }
+        });
+        // Check if at least one weight is positive
+        const hasAnyWeight = values.some(w => w > 0);
+        if (!hasAnyWeight) {
+            ui.notifications.warn(game.i18n.localize("FARKLE.noWeightsSet") || "At least one side must have a weight greater than 0");
+            return;
+        }
         await this.item.update({
             [`flags.farkledice.loaded`]: values
         });
@@ -755,12 +799,16 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
         this.element.querySelectorAll('.load').forEach(input => {
             input.addEventListener('change', (ev) => {
-                const allWeights = Array.from(this.element.querySelectorAll('.load')).map(x => parseInt(x.value) || 1);
+                const allWeights = Array.from(this.element.querySelectorAll('.load')).map(x => {
+                    const val = parseInt(x.value);
+                    return isNaN(val) ? 0 : Math.max(0, val);
+                });
                 const weightSum = allWeights.reduce((sum, current) => sum + current, 0);
 
                 this.element.querySelectorAll('.load').forEach((el, index) => {
-                    const newWeight = parseInt(el.value) || 1;
-                    const newProbability = (newWeight / weightSum * 100).toFixed(1);
+                    const val = parseInt(el.value);
+                    const newWeight = isNaN(val) ? 0 : Math.max(0, val);
+                    const newProbability = weightSum > 0 ? (newWeight / weightSum * 100).toFixed(1) : '0.0';
                     const parent = el.closest('.flexrow');
                     parent.querySelector('.probability').textContent = `${newProbability} %`; 
                 })
@@ -777,7 +825,7 @@ class DiceLoader extends foundry.applications.api.HandlebarsApplicationMixin(fou
     async _onDrop(event) {
         const dragData = JSON.parse(event.dataTransfer.getData('text/plain'));
 
-        if (!dragData.type == 'Item') return;
+        if (dragData.type !== 'Item') return;
 
         const item = await Item.implementation.fromDropData(dragData);
 
@@ -852,20 +900,29 @@ class PickLoadedDice extends foundry.applications.api.HandlebarsApplicationMixin
             if (selected.length === 0) continue;
 
             const uuid = actor.dataset.uuid;
-            const items = await Promise.all(Array.from(selected).map(async (die) => {
-                return await fromUuid(die.dataset.die);
-            }));
+            const items = (await Promise.all(Array.from(selected).map(async (die) => {
+                try {
+                    return await fromUuid(die.dataset.die);
+                } catch (e) {
+                    console.warn(`Farkle: Could not load item from UUID: ${die.dataset.die}`);
+                    return null;
+                }
+            }))).filter(item => item !== null);
 
+            if (items.length === 0) continue;
 
             const loadedDice = items.map(item => {
-                return item.flags.farkledice.loaded || [1, 1, 1, 1, 1, 1];
+                return item?.flags?.farkledice?.loaded || [1, 1, 1, 1, 1, 1];
             });
             const loadedWithIndex = [];
             for (let i = 0; i < loadedDice.length; i++) {
-                const randomIndex = Math.floor(Math.random() * 6);
-                while (loadedWithIndex[randomIndex]) {
+                let randomIndex = Math.floor(Math.random() * 6);
+                let attempts = 0;
+                while (loadedWithIndex[randomIndex] && attempts < 100) {
                     randomIndex = Math.floor(Math.random() * 6);
+                    attempts++;
                 }
+                if (attempts >= 100) continue;
                 loadedWithIndex[randomIndex] = loadedDice[i];
             }
 

@@ -16,6 +16,7 @@
         "characterName": "Charakter",
         "representedBy": "Spieler",
         "addPlayer": "Spieler hinzufügen",
+        "removePlayer": "Spieler entfernen",
         "rolling": "{name} würfelt {count}W6...",
         "loadedDice": "Die Würfel sind gezinkt! Du kannst sie in diesem Spiel verwenden.",
         "noDiceKept": "Du kannst nur Würfeln, wenn du mindestens einen Würfel behältst.",
@@ -26,6 +27,7 @@
         "reset": "Zurücksetzen",
         "setWeight": "Gewichtung festlegen",
         "pickLoadedDice": "Gezinkte Würfel auswählen",
-        "pickLoadedDiceDescription": "Einer oder mehrere deiner Charaktere haben gezinkte Würfel in ihrem Inventar. Du kannst sie hier auswählen, um sie im Farkle-Spiel zu verwenden."
+        "pickLoadedDiceDescription": "Einer oder mehrere deiner Charaktere haben gezinkte Würfel in ihrem Inventar. Du kannst sie hier auswählen, um sie im Farkle-Spiel zu verwenden.",
+        "noWeightsSet": "Mindestens eine Seite muss eine Gewichtung größer als 0 haben."
     }
 }

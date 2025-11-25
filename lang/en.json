@@ -15,6 +15,7 @@
         "characterName": "Character",
         "representedBy": "Player",
         "addPlayer": "Add Player",
+        "removePlayer": "Remove Player",
         "rolling": "{name} is rolling {count}D6...",
         "loadedDice": "The dice are loaded! You can use them in this game.",
         "noDiceKept": "You can only roll if you keep at least one die.",
@@ -25,6 +26,7 @@
         "reset": "Reset",
         "setWeight": "Set Weight",
         "pickLoadedDice": "Select Loaded Dice",
-        "pickLoadedDiceDescription": "One or more of your characters have loaded dice in their inventory. You can select them here to use them in the Farkle game."
+        "pickLoadedDiceDescription": "One or more of your characters have loaded dice in their inventory. You can select them here to use them in the Farkle game.",
+        "noWeightsSet": "At least one side must have a weight greater than 0."
     }
 }
