@@ -27,6 +27,14 @@
         "setWeight": "Set Weight",
         "pickLoadedDice": "Select Loaded Dice",
         "pickLoadedDiceDescription": "One or more of your characters have loaded dice in their inventory. You can select them here to use them in the Farkle game.",
-        "noWeightsSet": "At least one side must have a weight greater than 0."
+        "noWeightsSet": "At least one side must have a weight greater than 0.",
+        "targetScore": "Target Score",
+        "targetScoreHint": "Set to 0 for unlimited play",
+        "defaultTargetScore": "Default Target Score",
+        "defaultTargetScoreHint": "The default point limit when starting a new game (0 = no limit)",
+        "lastChanceEnabled": "Enable Last Chance",
+        "lastChanceEnabledHint": "When a player reaches the target score, other players get one final turn to try to beat them",
+        "lastChanceRound": "Last Chance Round!",
+        "lastChanceStarted": "{name} reached the target! Other players get one last turn!"
     }
 }

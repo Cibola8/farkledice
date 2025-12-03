@@ -2,8 +2,13 @@
     <div class="flexrow">
         <div><p>{{localize 'FARKLE.selectPlayers'}}</p></div>
         <div class="flex0">
-            <button type="button" class="icon fas fa-plus" data-action="addPlayer" data-tooltip="FARKLE.addPlayer"></button>            
+            <button type="button" class="icon fas fa-plus" data-action="addPlayer" data-tooltip="FARKLE.addPlayer"></button>
         </div>
+    </div>
+
+    <div class="flexrow" style="align-items: center; margin-bottom: 10px;">
+        <label style="flex: 1;">{{localize 'FARKLE.targetScore'}}</label>
+        <input type="number" class="targetScore" value="{{defaultTargetScore}}" min="0" step="500" style="width: 100px; text-align: right;" data-tooltip="FARKLE.targetScoreHint"/>
     </div>
     
     <div class="flexcol">

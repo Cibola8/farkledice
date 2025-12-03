@@ -50,25 +50,37 @@
         </div>
         {{/each}}
     </div>
-    <div class="score">
-        <div class="flexrow">
-            <b style="flex: 2">{{localize 'FARKLE.currentPoints'}}</b>
-            <div>
-                <div class="currentPoints">{{currentTurnPoints}}</div>
+    <div class="scrollable">
+        <div class="score">
+            <div class="flexrow">
+                <b style="flex: 2">{{localize 'FARKLE.currentPoints'}}</b>
+                <div>
+                    <div class="currentPoints">
+                        {{currentTurnPoints}}
+                        {{#if gameState.targetScore}}
+                        <span data-tooltip="FARKLE.targetScore"> / {{gameState.targetScore}}</span>
+                        {{/if}}
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <div class="scores">
-        {{#each gameState.users as |player|}}
-        <div class="playerScore flexrow">
-            <b style="flex: 2">{{player.name}}</b>
-            <div>
-                <div class="playerScoreValue">{{player.score}}</div>
-            </div>
+        
+        {{#if gameState.lastChanceRound}}
+        <div class="lastChanceIndicator" style="background: #ff9800; color: white; padding: 5px; text-align: center; border-radius: 3px; margin-bottom: 5px;">
+            <i class="fas fa-exclamation-triangle"></i> {{localize 'FARKLE.lastChanceRound'}}
         </div>
-        {{/each}}
+        {{/if}}
+        <div class="scores">
+            {{#each gameState.users as |player|}}
+            <div class="playerScore flexrow">
+                <b style="flex: 2">{{player.name}}</b>
+                <div>
+                    <div class="playerScoreValue">{{player.score}}</div>
+                </div>
+            </div>
+            {{/each}}
+        </div>
     </div>
-</div>
-{{/if}}
+    {{/if}}
 
 </div>

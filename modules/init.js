@@ -24,6 +24,24 @@ Hooks.once("ready", () => {
         type: FarkleStart,
         restricted: true,
     });
+
+    game.settings.register(moduleName, 'defaultTargetScore', {
+        name: 'FARKLE.defaultTargetScore',
+        hint: 'FARKLE.defaultTargetScoreHint',
+        scope: 'world',
+        config: true,
+        type: Number,
+        default: 10000,
+    });
+
+    game.settings.register(moduleName, 'lastChanceEnabled', {
+        name: 'FARKLE.lastChanceEnabled',
+        hint: 'FARKLE.lastChanceEnabledHint',
+        scope: 'world',
+        config: true,
+        type: Boolean,
+        default: true,
+    });
 })
 
 
@@ -98,7 +116,11 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         remainingRolls: 3,
         rollLength: 6,
         score: 0,
-        keepIndex: []
+        keepIndex: [],
+        targetScore: 0,
+        lastChanceEnabled: false,
+        lastChanceTriggeredBy: null,
+        lastChanceRound: false
     }
 
     _gameState = {}
@@ -142,12 +164,17 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         new FarkleHelp().render(true);
     }
 
-    resetFarkle(users) {
+    resetFarkle(users, targetScore = 0) {
         this._gameState = foundry.utils.duplicate(this._initialState);
+        const lastChanceEnabled = game.settings.get(moduleName, 'lastChanceEnabled');
         const state = {
             users,
             userTurn: 0,
             event: "start",
+            targetScore,
+            lastChanceEnabled,
+            lastChanceTriggeredBy: null,
+            lastChanceRound: false
         }
         this.gameState = state;
     }
@@ -348,14 +375,56 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
     }
 
     static endTurn(_ev, _target) {
+        const roundScore = this.score().score + this.gameState.score;
+        const user = this.gameState.users[this.gameState.userTurn];
+        user.score += roundScore;
 
-        let nextUser = this.gameState.userTurn + 1;
+        const targetScore = this.gameState.targetScore;
+        const lastChanceEnabled = this.gameState.lastChanceEnabled;
+        const lastChanceTriggeredBy = this.gameState.lastChanceTriggeredBy;
+        const currentUserIndex = this.gameState.userTurn;
+
+        // Check if this player just reached the target score
+        if (targetScore > 0 && user.score >= targetScore && !lastChanceTriggeredBy) {
+            if (lastChanceEnabled) {
+                // Trigger last chance round
+                ui.notifications.info(game.i18n.format("FARKLE.lastChanceStarted", { name: user.name }));
+                let nextUser = currentUserIndex + 1;
+                if (nextUser >= this.gameState.users.length) {
+                    nextUser = 0;
+                }
+                this.gameState = {
+                    userTurn: nextUser,
+                    remainingRolls: 3,
+                    rollLength: 6,
+                    score: 0,
+                    currentDice: [],
+                    keptDice: [],
+                    keepIndex: [],
+                    isHotDice: false,
+                    lastChanceTriggeredBy: currentUserIndex,
+                    lastChanceRound: true
+                };
+                return;
+            } else {
+                // No last chance, end game immediately
+                FarkleScorer.#endGameWithWinner.call(this);
+                return;
+            }
+        }
+
+        // Check if last chance round is complete (back to the player who triggered it)
+        let nextUser = currentUserIndex + 1;
         if (nextUser >= this.gameState.users.length) {
             nextUser = 0;
         }
-        const roundScore = this.score().score + this.gameState.score;
-        const user = this.gameState.users[this.gameState.userTurn]
-        user.score += roundScore;
+
+        if (lastChanceTriggeredBy !== null && nextUser === lastChanceTriggeredBy) {
+            // Last chance round complete, determine winner
+            FarkleScorer.#endGameWithWinner.call(this);
+            return;
+        }
+
         this.gameState = {
             userTurn: nextUser,
             remainingRolls: 3,
@@ -365,13 +434,29 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             keptDice: [],
             keepIndex: [],
             isHotDice: false,
-        }
+        };
+    }
+
+    static #endGameWithWinner() {
+        const users = this.gameState.users;
+        const winner = users.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+        const winnerMessage = game.i18n.format("FARKLE.winner", { name: winner.name, score: winner.score });
+        const content = `<p>${winnerMessage}</p><p><ul>${users.map(x => `<li><b>${x.name}</b>: ${x.score}</li>`).join('')}</ul></p>`;
+        ChatMessage.create({ content });
+
+        this._gameState = foundry.utils.duplicate(this._initialState);
+        game.socket.emit(`module.${moduleName}`, {
+            type: 'close',
+            payload: { userId: game.user.id },
+        });
+        this.close();
     }
 
     static PARTS = {
         main: {
             root: true,
             template: "modules/farkledice/templates/main.hbs",
+            scrollable: ['.scrollable']
         }
     }
 
@@ -583,7 +668,9 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
                 character_id: player.dataset.characteruuid
             })
         }
-        game.modules.get(moduleName).api.farkleScorer.resetFarkle(users);
+        const targetScoreInput = this.element.querySelector('.targetScore');
+        const targetScore = parseInt(targetScoreInput?.value) || 0;
+        game.modules.get(moduleName).api.farkleScorer.resetFarkle(users, targetScore);
         this.close();
     }
 
@@ -606,12 +693,15 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
     async _prepareContext(options) {
         const data = await super._prepareContext(options);
         data.players = this.availablePlayers;
+        data.defaultTargetScore = game.settings.get(moduleName, 'defaultTargetScore');
         return data;
     }
 
     static async addPlayer(_ev, target) {
         this._addRow({
             id: game.user.id,
+            name: game.user.name,
+            characterName: game.user.character?.name || game.user.name,
             avatar: game.user.character?.img || game.user.avatar,
             character_id: game.user.character?.uuid,
         });
@@ -634,7 +724,6 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
 
         addAfter.insertAdjacentHTML('afterend', newRow);
     }
-
 
     _canDragStart() {
         return false;

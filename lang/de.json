@@ -28,6 +28,14 @@
         "setWeight": "Gewichtung festlegen",
         "pickLoadedDice": "Gezinkte Würfel auswählen",
         "pickLoadedDiceDescription": "Einer oder mehrere deiner Charaktere haben gezinkte Würfel in ihrem Inventar. Du kannst sie hier auswählen, um sie im Farkle-Spiel zu verwenden.",
-        "noWeightsSet": "Mindestens eine Seite muss eine Gewichtung größer als 0 haben."
+        "noWeightsSet": "Mindestens eine Seite muss eine Gewichtung größer als 0 haben.",
+        "targetScore": "Zielpunktzahl",
+        "targetScoreHint": "Auf 0 setzen für unbegrenztes Spiel",
+        "defaultTargetScore": "Standard-Zielpunktzahl",
+        "defaultTargetScoreHint": "Die Standard-Punktgrenze beim Starten eines neuen Spiels (0 = keine Grenze)",
+        "lastChanceEnabled": "Letzte Chance aktivieren",
+        "lastChanceEnabledHint": "Wenn ein Spieler die Zielpunktzahl erreicht, erhalten die anderen Spieler eine letzte Runde, um ihn zu übertreffen",
+        "lastChanceRound": "Letzte Chance!",
+        "lastChanceStarted": "{name} hat das Ziel erreicht! Die anderen Spieler haben noch eine letzte Runde!"
     }
 }
