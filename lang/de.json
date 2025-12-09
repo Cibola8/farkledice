@@ -36,6 +36,17 @@
         "lastChanceEnabled": "Letzte Chance aktivieren",
         "lastChanceEnabledHint": "Wenn ein Spieler die Zielpunktzahl erreicht, erhalten die anderen Spieler eine letzte Runde, um ihn zu übertreffen",
         "lastChanceRound": "Letzte Chance!",
-        "lastChanceStarted": "{name} hat das Ziel erreicht! Die anderen Spieler haben noch eine letzte Runde!"
+        "lastChanceStarted": "{name} hat das Ziel erreicht! Die anderen Spieler haben noch eine letzte Runde!",
+        "turnOrder": "Zugreihenfolge",
+        "victoryTitle": "Sieg!",
+        "victoryScore": "{score} Punkte",
+        "farkleTitle": "FARKLE!",
+        "farkleLost": "Du hast alle Punkte dieser Runde verloren!",
+        "farkleLostPlayer": "{name} hat alle Punkte dieser Runde verloren!",
+        "hotDiceTitle": "HEISSE WÜRFEL!",
+        "hotDiceMessage": "Alle Würfel haben gepunktet! Würfle alle 6 erneut!",
+        "hotDicePlayer": "{name} darf alle 6 Würfel erneut werfen!",
+        "rematch": "Revanche mit denselben Spielern",
+        "noRematchData": "Kein vorheriges Spiel für Revanche."
     }
 }

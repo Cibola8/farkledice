@@ -34,7 +34,10 @@
             <p>{{localize 'FARKLE.noGame'}}</p>
         {{/if}}
         {{#if isGm}}
-        <div class="flexrow" style="margin-left: auto;flex:auto;flex-grow:0;">            
+        <div class="flexrow" style="margin-left: auto;flex:auto;flex-grow:0;">
+            {{#if hasRematchData}}
+            <button type="button" class="icon fas fa-redo" data-action="rematch" data-tooltip="FARKLE.rematch"></button>
+            {{/if}}
             <button type="button"  class="icon fas fa-flag-checkered" data-action="startFarkle"
                 data-tooltip="FARKLE.start"></button>
             <button type="button" class="icon fas fa-xmark" data-action="endFarkle" data-tooltip="FARKLE.close"></button>            
@@ -51,30 +54,38 @@
         {{/each}}
     </div>
     <div class="scrollable">
-        <div class="score">
+        <div class="score" style="border-bottom: 1px solid black;">
             <div class="flexrow">
                 <b style="flex: 2">{{localize 'FARKLE.currentPoints'}}</b>
-                <div>
+                <div class="flexrow">
                     <div class="currentPoints">
                         {{currentTurnPoints}}
+                    </div>
+                    <div>
                         {{#if gameState.targetScore}}
-                        <span data-tooltip="FARKLE.targetScore"> / {{gameState.targetScore}}</span>
+                        <span data-tooltip="FARKLE.targetScore"><i class="fas fa-bullseye"></i> {{gameState.targetScore}}</span>
                         {{/if}}
                     </div>
                 </div>
             </div>
         </div>
-        
         {{#if gameState.lastChanceRound}}
         <div class="lastChanceIndicator" style="background: #ff9800; color: white; padding: 5px; text-align: center; border-radius: 3px; margin-bottom: 5px;">
             <i class="fas fa-exclamation-triangle"></i> {{localize 'FARKLE.lastChanceRound'}}
         </div>
         {{/if}}
         <div class="scores">
-            {{#each gameState.users as |player|}}
-            <div class="playerScore flexrow">
-                <b style="flex: 2">{{player.name}}</b>
-                <div>
+            {{#each sortedUsers as |player|}}
+            <div class="playerScore flexrow {{#if player.isCurrentTurn}}current-turn{{/if}}">
+                <div style="flex: 0 0 20px">
+                    {{#if player.isCurrentTurn}}<i class="fas fa-play" style="color: var(--color-shadow-primary);"></i>{{/if}}
+                    {{#if player.isLeader}}{{#unless player.isCurrentTurn}}<i class="fas fa-crown"></i>{{/unless}}{{/if}}
+                </div>
+                <b class="flex1">{{player.name}}</b>
+                <div class="flex1" style="flex: 0 0 24px; text-align: center; opacity: 0.6; font-size: 0.8em;" data-tooltip="FARKLE.turnOrder">
+                    ⟨{{player.turnOrder}}⟩
+                </div>
+                <div class="flex1">
                     <div class="playerScoreValue">{{player.score}}</div>
                 </div>
             </div>

@@ -1,0 +1,118 @@
+<h1>Farkle Würfelspiel Anleitung</h1>
+
+<h2>Überblick</h2>
+<p>Farkle ist ein klassisches Würfelspiel, das Strategie und Glück kombiniert. Die Spieler würfeln abwechselnd mit sechs
+    Würfeln und versuchen, durch bestimmte Kombinationen Punkte zu sammeln. Der erste Spieler, der 10.000 Punkte
+    erreicht oder überschreitet, gewinnt das Spiel.</p>
+
+<h2>Spielablauf</h2>
+<ol>
+    <li>In deinem Zug würfelst du mit allen sechs Würfeln.</li>
+    <li>Nach jedem Wurf legst du Würfel beiseite, die Punktekombinationen bilden.</li>
+    <li>Du kannst wählen:
+        <ul>
+            <li><strong>Punkte sichern</strong> und deinen Zug beenden.</li>
+            <li><strong>Weiterwürfeln</strong> mit den verbleibenden Würfeln, um mehr Punkte zu erzielen.</li>
+        </ul>
+    </li>
+    <li>Wenn du mit allen sechs Würfeln punktest, hast du "heiße Würfel" und darfst im selben Zug erneut mit allen sechs
+        Würfeln würfeln.</li>
+    <li>Wenn du würfelst und keine Punktekombination erscheint, hast du einen "Farkle" und verlierst alle in diesem Zug
+        gesammelten Punkte.</li>
+</ol>
+
+<h2>Punktekombinationen</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Kombination</th>
+            <th>Punkte</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Einzelne 1</td>
+            <td>100</td>
+        </tr>
+        <tr>
+            <td>Einzelne 5</td>
+            <td>50</td>
+        </tr>
+        <tr>
+            <td>Drei 1er</td>
+            <td>1000</td>
+        </tr>
+        <tr>
+            <td>Drei 2er</td>
+            <td>200</td>
+        </tr>
+        <tr>
+            <td>Drei 3er</td>
+            <td>300</td>
+        </tr>
+        <tr>
+            <td>Drei 4er</td>
+            <td>400</td>
+        </tr>
+        <tr>
+            <td>Drei 5er</td>
+            <td>500</td>
+        </tr>
+        <tr>
+            <td>Drei 6er</td>
+            <td>600</td>
+        </tr>
+        <tr>
+            <td>Viererpasch</td>
+            <td>Doppelte Punkte des Dreierpasch</td>
+        </tr>
+        <tr>
+            <td>Fünferpasch</td>
+            <td>Dreifache Punkte des Dreierpasch</td>
+        </tr>
+        <tr>
+            <td>Sechserpasch</td>
+            <td>Vierfache Punkte des Dreierpasch</td>
+        </tr>
+        <tr>
+            <td>Straße (1-6)</td>
+            <td>1500</td>
+        </tr>
+        <tr>
+            <td>Drei Paare</td>
+            <td>1500</td>
+        </tr>
+        <tr>
+            <td>Zwei Drillinge</td>
+            <td>2500</td>
+        </tr>
+        <tr>
+            <td>Viererpasch + ein Paar</td>
+            <td>1500</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Beispiele</h2>
+
+<div class="example">
+    <strong>Wurf:</strong> 1, 1, 1, 5, 5, 2<br>
+    <strong>Wertung:</strong> Drei 1er = 1000, Zwei 5er = 100<br>
+    <strong>Gesamt:</strong> 1100 Punkte
+</div>
+
+<div class="example">
+    <strong>Wurf:</strong> 2, 2, 3, 3, 4, 4<br>
+    <strong>Wertung:</strong> Drei Paare = 1500 Punkte
+</div>
+
+<div class="example">
+    <strong>Wurf:</strong> 1, 2, 3, 4, 5, 6<br>
+    <strong>Wertung:</strong> Straße = 1500 Punkte
+</div>
+
+<div class="example">
+    <strong>Wurf:</strong> 2, 3, 4, 6, 6, 2<br>
+    <strong>Wertung:</strong> Keine Punktekombination<br>
+    <strong>Ergebnis:</strong> Farkle (0 Punkte für diesen Zug)
+</div>

@@ -35,6 +35,17 @@
         "lastChanceEnabled": "Enable Last Chance",
         "lastChanceEnabledHint": "When a player reaches the target score, other players get one final turn to try to beat them",
         "lastChanceRound": "Last Chance Round!",
-        "lastChanceStarted": "{name} reached the target! Other players get one last turn!"
+        "lastChanceStarted": "{name} reached the target! Other players get one last turn!",
+        "turnOrder": "Turn order position",
+        "victoryTitle": "Victory!",
+        "victoryScore": "{score} Points",
+        "farkleTitle": "FARKLE!",
+        "farkleLost": "You lost all points this turn!",
+        "farkleLostPlayer": "{name} lost all points this turn!",
+        "hotDiceTitle": "HOT DICE!",
+        "hotDiceMessage": "All dice scored! Roll all 6 again!",
+        "hotDicePlayer": "{name} gets to roll all 6 dice again!",
+        "rematch": "Rematch with same players",
+        "noRematchData": "No previous game to rematch."
     }
 }

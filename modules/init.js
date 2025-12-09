@@ -78,6 +78,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             endFarkle: this.endFarkle,
             showHelp: this.showHelp,
             loadDice: this.loadDice,
+            rematch: this.rematch,
         },
     }
 
@@ -123,6 +124,8 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         lastChanceRound: false
     }
 
+    _lastGameConfig = null
+
     _gameState = {}
 
     socketEvents(data) {
@@ -137,6 +140,15 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             case 'close':
                 this.close();
                 break;
+            case 'farkle':
+                FarkleScorer.showFarkleOverlay(data.payload.playerName);
+                break;
+            case 'hotdice':
+                FarkleScorer.showHotDiceOverlay(data.payload.playerName);
+                break;
+            case 'winner':
+                FarkleScorer.showWinnerOverlay(data.payload.topPlayers);
+                break;
             default:
                 break;
         }
@@ -145,11 +157,21 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
     static endFarkle(_ev, _target) {
         const users = this.gameState.users;
         if (users.some(user => user.score)) {
-            const winner = users.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+            const sortedUsers = [...users].sort((a, b) => b.score - a.score);
+            const winner = sortedUsers[0];
             const winnerMessage = game.i18n.format("FARKLE.winner", { name: winner.name, score: winner.score });
-            const content = `<p>${winnerMessage}</p><p><ul>${users.map(x => `<li><b>${x.name}</b>: ${x.score}</li>`).join('')}</ul></p>`
+            const playerList = sortedUsers.map(x => {
+                const isWinner = x === winner;
+                const icon = isWinner ? '<i class="fas fa-trophy"></i> ' : '';
+                const style = isWinner ? 'font-weight: bold;' : '';
+                return `<li style="${style}"><div class="flexrow"><div style="flex: 2">${icon}${x.name}</div><div>${x.score}</div></div></li>`;
+            }).join('');
+            const content = `<p>${winnerMessage}</p><p><ol>${playerList}</ol></p>`
             const chatMessage = { content };
             ChatMessage.create(chatMessage);
+
+            // Show fullscreen winner overlay with top 3
+            FarkleScorer.showWinnerOverlay(sortedUsers.slice(0, 3), true);
         }
 
         this._gameState = foundry.utils.duplicate(this._initialState);
@@ -160,11 +182,137 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         this.close();
     }
 
+    static showWinnerOverlay(topPlayers, broadcast = false) {
+        // Broadcast to other players
+        if (broadcast) {
+            game.socket.emit(`module.${moduleName}`, {
+                type: 'winner',
+                payload: { topPlayers }
+            });
+        }
+
+        const winner = topPlayers[0];
+        const podiumIcons = ['fa-trophy', 'fa-medal', 'fa-award'];
+        const podiumColors = ['gold', 'silver', '#cd7f32']; // gold, silver, bronze
+        
+        const podiumHtml = topPlayers.map((player, index) => {
+            const icon = podiumIcons[index] || 'fa-star';
+            const color = podiumColors[index] || '#888';
+            const sizeClass = index === 0 ? 'first-place' : (index === 1 ? 'second-place' : 'third-place');
+            return `
+                <div class="podium-player ${sizeClass}">
+                    <i class="fas ${icon}" style="color: ${color};"></i>
+                    <div class="podium-name">${player.name}</div>
+                    <div class="podium-score">${player.score}</div>
+                </div>
+            `;
+        }).join('');
+
+        const overlay = document.createElement('div');
+        overlay.className = 'farkle-winner-overlay';
+        overlay.innerHTML = `
+            <div class="farkle-winner-content">
+                <h1>${game.i18n.localize("FARKLE.victoryTitle")}</h1>
+                <div class="podium">
+                    ${podiumHtml}
+                </div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        // Fade in
+        requestAnimationFrame(() => overlay.classList.add('visible'));
+
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        }, 4000);
+
+        // Click to dismiss early
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        });
+    }
+
+    static showFarkleOverlay(playerName, broadcast = false) {
+        // Broadcast to other players
+        if (broadcast) {
+            game.socket.emit(`module.${moduleName}`, {
+                type: 'farkle',
+                payload: { playerName }
+            });
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'farkle-overlay farkle-loss';
+        overlay.innerHTML = `
+            <div class="farkle-overlay-content">
+                <i class="fas fa-dice"></i>
+                <h1>${game.i18n.localize("FARKLE.farkleTitle")}</h1>
+                <p>${game.i18n.format("FARKLE.farkleLostPlayer", { name: playerName })}</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => overlay.classList.add('visible'));
+
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        }, 2500);
+
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        });
+    }
+
+    static showHotDiceOverlay(playerName, broadcast = false) {
+        // Broadcast to other players
+        if (broadcast) {
+            game.socket.emit(`module.${moduleName}`, {
+                type: 'hotdice',
+                payload: { playerName }
+            });
+        }
+
+        const overlay = document.createElement('div');
+        overlay.className = 'farkle-overlay farkle-hot';
+        overlay.innerHTML = `
+            <div class="farkle-overlay-content">
+                <i class="fas fa-fire"></i>
+                <h1>${game.i18n.localize("FARKLE.hotDiceTitle")}</h1>
+                <p>${game.i18n.format("FARKLE.hotDicePlayer", { name: playerName })}</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => overlay.classList.add('visible'));
+
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        }, 2500);
+
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        });
+    }
+
     static async showHelp(_ev, _target) {
         new FarkleHelp().render(true);
     }
 
     resetFarkle(users, targetScore = 0) {
+        // Store config for rematch
+        this._lastGameConfig = {
+            users: users.map(u => ({ ...u, score: 0 })),
+            targetScore
+        };
+
         this._gameState = foundry.utils.duplicate(this._initialState);
         const lastChanceEnabled = game.settings.get(moduleName, 'lastChanceEnabled');
         const state = {
@@ -177,6 +325,15 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             lastChanceRound: false
         }
         this.gameState = state;
+    }
+
+    static rematch(_ev, _target) {
+        if (!this._lastGameConfig) {
+            ui.notifications.warn(game.i18n.localize("FARKLE.noRematchData"));
+            return;
+        }
+        const config = this._lastGameConfig;
+        this.resetFarkle(config.users.map(u => ({ ...u, score: 0 })), config.targetScore);
     }
 
     static startFarkle(_ev, _target) {
@@ -267,7 +424,8 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                 newState.keepIndex = [];
                 newState.isHotDice = true;
 
-                ui.notifications.warn(game.i18n.localize("FARKLE.diceAreBurning"));
+                const currentPlayer = this.gameState.users[this.gameState.userTurn];
+                FarkleScorer.showHotDiceOverlay(currentPlayer.name, true);
             }
         }
 
@@ -364,6 +522,8 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         }
         if (this.isFarkle(newState.currentDice)) {
             newState.score = 0;
+            const currentPlayer = this.gameState.users[this.gameState.userTurn];
+            FarkleScorer.showFarkleOverlay(currentPlayer.name, true);
         }
         this.gameState = newState;
     }
@@ -439,10 +599,20 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     static #endGameWithWinner() {
         const users = this.gameState.users;
-        const winner = users.reduce((prev, current) => (prev.score > current.score) ? prev : current);
+        const sortedUsers = [...users].sort((a, b) => b.score - a.score);
+        const winner = sortedUsers[0];
         const winnerMessage = game.i18n.format("FARKLE.winner", { name: winner.name, score: winner.score });
-        const content = `<p>${winnerMessage}</p><p><ul>${users.map(x => `<li><b>${x.name}</b>: ${x.score}</li>`).join('')}</ul></p>`;
+        const playerList = sortedUsers.map(x => {
+            const isWinner = x === winner;
+            const icon = isWinner ? '<i class="fas fa-trophy" style="color: gold;"></i> ' : '';
+            const style = isWinner ? 'font-weight: bold;' : '';
+            return `<li style="${style}">${icon}${x.name}: ${x.score}</li>`;
+        }).join('');
+        const content = `<p>${winnerMessage}</p><p><ul>${playerList}</ul></p>`;
         ChatMessage.create({ content });
+
+        // Show fullscreen winner overlay with top 3
+        FarkleScorer.showWinnerOverlay(sortedUsers.slice(0, 3), true);
 
         this._gameState = foundry.utils.duplicate(this._initialState);
         game.socket.emit(`module.${moduleName}`, {
@@ -525,6 +695,29 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                 }
             })
         }
+
+        // Create sorted player list for leaderboard display
+        if (data.started && this.gameState.users?.length) {
+            const currentTurnIndex = this.gameState.userTurn;
+            data.sortedUsers = [...this.gameState.users]
+                .map((user, originalIndex) => ({
+                    ...user,
+                    turnOrder: originalIndex + 1,
+                    isCurrentTurn: originalIndex === currentTurnIndex,
+                    isLeader: false
+                }))
+                .sort((a, b) => b.score - a.score);
+            
+            // Mark the leader (first after sorting)
+            if (data.sortedUsers.length > 0 && data.sortedUsers[0].score > 0) {
+                data.sortedUsers[0].isLeader = true;
+            }
+        }
+
+        // Calculate preview score (what would be scored with current selection)
+        data.previewScore = currentScore.score;
+        data.hasRematchData = !!this._lastGameConfig;
+
         return data;
     }
 
@@ -625,6 +818,13 @@ class FarkleHelp extends foundry.applications.api.HandlebarsApplicationMixin(fou
         main: {
             template: "modules/farkledice/templates/description.hbs",
         }
+    }
+
+    async _prepareContext(options) {
+        const data = await super._prepareContext(options);
+        const lang = game.i18n.lang === 'de' ? 'de' : 'en';
+        data.description = await foundry.applications.handlebars.renderTemplate(`modules/farkledice/templates/description-${lang}.hbs`);
+        return data;
     }
 }
 
