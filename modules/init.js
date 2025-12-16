@@ -79,6 +79,8 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             showHelp: this.showHelp,
             loadDice: this.loadDice,
             rematch: this.rematch,
+            yield: this.yield,
+            removeIdlePlayers: this.removeIdlePlayers,
         },
     }
 
@@ -109,6 +111,64 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         this.render(true);
     }
 
+    async close(options) {
+        if (this._autoEndInterval) {
+            clearInterval(this._autoEndInterval);
+            this._autoEndInterval = null;
+        }
+        this._autoEndFiring = false;
+        return super.close(options);
+    }
+
+    #shouldAutoEndBeActive() {
+        if (!this.gameState || foundry.utils.isEmpty(this.gameState)) return false;
+        if (!this.gameState.autoEndAt) return false;
+        if (this.gameState.autoEndTurn !== this.gameState.userTurn) return false;
+        return Date.now() < this.gameState.autoEndAt;
+    }
+
+    #syncAutoEndInterval() {
+        const shouldRun = this.#shouldAutoEndBeActive();
+        if (shouldRun && !this._autoEndInterval) {
+            this._autoEndFiring = false;
+            this._autoEndInterval = setInterval(() => this.#autoEndTick(), 1000);
+        } else if (!shouldRun && this._autoEndInterval) {
+            clearInterval(this._autoEndInterval);
+            this._autoEndInterval = null;
+            this._autoEndFiring = false;
+        }
+    }
+
+    #autoEndTick() {
+        if (!this.gameState || foundry.utils.isEmpty(this.gameState)) {
+            this.#syncAutoEndInterval();
+            return;
+        }
+
+        // Light rerender so the countdown updates.
+        try {
+            this.render(false);
+        } catch (_e) {
+            // ignore
+        }
+
+        if (!this.gameState.autoEndAt || this.gameState.autoEndTurn !== this.gameState.userTurn) {
+            this.#syncAutoEndInterval();
+            return;
+        }
+
+        const remainingMs = this.gameState.autoEndAt - Date.now();
+        if (remainingMs > 0) return;
+
+        // Only the active player auto-advances to avoid duplicates.
+        if (this.myTurn && !this._autoEndFiring) {
+            this._autoEndFiring = true;
+            FarkleScorer.endTurn.call(this);
+        }
+
+        this.#syncAutoEndInterval();
+    }
+
     _initialState = {
         userTurn: null,
         users: [],
@@ -121,12 +181,20 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         targetScore: 0,
         lastChanceEnabled: false,
         lastChanceTriggeredBy: null,
-        lastChanceRound: false
+        lastChanceRound: false,
+
+        // Auto-end-of-round timer (synced)
+        autoEndAt: null,
+        autoEndTurn: null,
+        autoEndReason: null
     }
 
     _lastGameConfig = null
 
     _gameState = {}
+
+    _autoEndInterval = null
+    _autoEndFiring = false
 
     socketEvents(data) {
         switch (data.type) {
@@ -149,9 +217,148 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             case 'winner':
                 FarkleScorer.showWinnerOverlay(data.payload.topPlayers);
                 break;
+            case 'yield': {
+                const playerName = data.payload?.playerName;
+                if (playerName) {
+                    ui.notifications.info(game.i18n.format('FARKLE.yieldedInfo', { name: playerName }));
+
+                    // Create one shared chat message (only the first active GM does this)
+                    const primaryGm = game.users.find(u => u.isGM && u.active);
+                    if (primaryGm && game.user.id === primaryGm.id) {
+                        ChatMessage.create({
+                            content: `<p>${game.i18n.format('FARKLE.yieldedChat', { name: playerName })}</p>`
+                        });
+                    }
+                }
+                break;
+            }
             default:
                 break;
         }
+    }
+
+    static yield(_ev, _target) {
+        if (!this.gameState || foundry.utils.isEmpty(this.gameState)) return;
+
+        const yieldingIndex = this.gameState.users.findIndex(u => u.id === game.user.id);
+        if (yieldingIndex < 0) return;
+
+        const yieldingPlayer = this.gameState.users[yieldingIndex];
+        const remainingUsers = this.gameState.users.filter((_u, idx) => idx !== yieldingIndex);
+
+        if (remainingUsers.length === 0) {
+            // If no players remain, end the game.
+            game.socket.emit(`module.${moduleName}`, {
+                type: 'yield',
+                payload: { playerName: yieldingPlayer.name, userId: yieldingPlayer.id },
+            });
+            FarkleScorer.endFarkle.call(this);
+            return;
+        }
+
+        // Adjust userTurn index after removal.
+        let nextTurn = this.gameState.userTurn;
+        if (yieldingIndex === this.gameState.userTurn) {
+            nextTurn = yieldingIndex;
+            if (nextTurn >= remainingUsers.length) nextTurn = 0;
+        } else if (yieldingIndex < this.gameState.userTurn) {
+            nextTurn = Math.max(0, nextTurn - 1);
+        }
+
+        // Adjust last chance bookkeeping (indexes change when removing users)
+        let lastChanceTriggeredBy = this.gameState.lastChanceTriggeredBy;
+        let lastChanceRound = this.gameState.lastChanceRound;
+        if (lastChanceTriggeredBy !== null && lastChanceTriggeredBy !== undefined) {
+            if (yieldingIndex === lastChanceTriggeredBy) {
+                lastChanceTriggeredBy = null;
+                lastChanceRound = false;
+            } else if (yieldingIndex < lastChanceTriggeredBy) {
+                lastChanceTriggeredBy = Math.max(0, lastChanceTriggeredBy - 1);
+            }
+        }
+
+        // Remove player and start next player's fresh turn.
+        this.gameState = {
+            users: remainingUsers,
+            userTurn: nextTurn,
+            remainingRolls: 3,
+            rollLength: 6,
+            score: 0,
+            currentDice: [],
+            keptDice: [],
+            keepIndex: [],
+            isHotDice: false,
+            lastChanceTriggeredBy,
+            lastChanceRound,
+            autoEndAt: null,
+            autoEndTurn: null,
+            autoEndReason: null,
+        };
+
+        // Notify everyone (synced via socket)
+        game.socket.emit(`module.${moduleName}`, {
+            type: 'yield',
+            payload: { playerName: yieldingPlayer.name, userId: yieldingPlayer.id },
+        });
+    }
+
+    static removeIdlePlayers(_ev, _target) {
+        if (!game.user.isGM) return;
+        if (!this.gameState || foundry.utils.isEmpty(this.gameState)) return;
+
+        const idleIndexes = [];
+        for (let i = 0; i < this.gameState.users.length; i++) {
+            const u = this.gameState.users[i];
+            const foundryUser = game.users.get(u.id);
+            if (!foundryUser || !foundryUser.active) idleIndexes.push(i);
+        }
+
+        if (idleIndexes.length === 0) {
+            ui.notifications.info(game.i18n.localize('FARKLE.noIdlePlayers'));
+            return;
+        }
+
+        const removeSet = new Set(idleIndexes);
+        const remainingUsers = this.gameState.users.filter((_u, idx) => !removeSet.has(idx));
+        if (remainingUsers.length === 0) {
+            ui.notifications.warn(game.i18n.localize('FARKLE.cannotRemoveAllPlayers'));
+            return;
+        }
+
+        // Adjust userTurn based on removed indexes.
+        let nextTurn = this.gameState.userTurn;
+        for (const idx of idleIndexes) {
+            if (idx < this.gameState.userTurn) nextTurn -= 1;
+        }
+        if (removeSet.has(this.gameState.userTurn)) {
+            // Current player removed: start fresh at same index (now next player), clamp to bounds.
+            nextTurn = Math.max(0, Math.min(nextTurn, remainingUsers.length - 1));
+            this.gameState = {
+                users: remainingUsers,
+                userTurn: nextTurn,
+                remainingRolls: 3,
+                rollLength: 6,
+                score: 0,
+                currentDice: [],
+                keptDice: [],
+                keepIndex: [],
+                isHotDice: false,
+                autoEndAt: null,
+                autoEndTurn: null,
+                autoEndReason: null,
+            };
+        } else {
+            nextTurn = Math.max(0, Math.min(nextTurn, remainingUsers.length - 1));
+            this.gameState = {
+                users: remainingUsers,
+                userTurn: nextTurn,
+                autoEndAt: null,
+                autoEndTurn: null,
+                autoEndReason: null,
+            };
+        }
+
+        ui.notifications.info(game.i18n.format('FARKLE.removedIdlePlayers', { count: idleIndexes.length }));
     }
 
     static endFarkle(_ev, _target) {
@@ -424,6 +631,11 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                 newState.keepIndex = [];
                 newState.isHotDice = true;
 
+                // Player can roll again; ensure no auto-end countdown is active.
+                newState.autoEndAt = null;
+                newState.autoEndTurn = null;
+                newState.autoEndReason = null;
+
                 const currentPlayer = this.gameState.users[this.gameState.userTurn];
                 FarkleScorer.showHotDiceOverlay(currentPlayer.name, true);
             }
@@ -522,8 +734,19 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         }
         if (this.isFarkle(newState.currentDice)) {
             newState.score = 0;
+            newState.remainingRolls = 0;
             const currentPlayer = this.gameState.users[this.gameState.userTurn];
             FarkleScorer.showFarkleOverlay(currentPlayer.name, true);
+
+            // Auto-finish the round after a short delay.
+            newState.autoEndAt = Date.now() + 5000;
+            newState.autoEndTurn = this.gameState.userTurn;
+            newState.autoEndReason = 'farkle';
+        } else if (newState.remainingRolls <= 0) {
+            // No rolls remaining: allow a short window to pick dice, then auto-end.
+            newState.autoEndAt = Date.now() + 5000;
+            newState.autoEndTurn = this.gameState.userTurn;
+            newState.autoEndReason = 'no-rolls';
         }
         this.gameState = newState;
     }
@@ -563,7 +786,11 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
                     keepIndex: [],
                     isHotDice: false,
                     lastChanceTriggeredBy: currentUserIndex,
-                    lastChanceRound: true
+                    lastChanceRound: true,
+
+                    autoEndAt: null,
+                    autoEndTurn: null,
+                    autoEndReason: null
                 };
                 return;
             } else {
@@ -594,6 +821,10 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             keptDice: [],
             keepIndex: [],
             isHotDice: false,
+
+            autoEndAt: null,
+            autoEndTurn: null,
+            autoEndReason: null,
         };
     }
 
@@ -670,6 +901,16 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             data.allowedToRoll = this.gameState.remainingRolls > 0;
             data.myTurn = this.myTurn;
         }
+
+        data.canYield = data.started && this.gameState?.users?.some(u => u.id === game.user.id);
+
+        data.autoEndSeconds = null;
+        if (data.started && this.gameState.autoEndAt && this.gameState.autoEndTurn === this.gameState.userTurn) {
+            const remainingMs = this.gameState.autoEndAt - Date.now();
+            if (remainingMs > 0) {
+                data.autoEndSeconds = Math.ceil(remainingMs / 1000);
+            }
+        }
         data.isFarkle = this.isFarkle();
         if (this.gameState.currentDice?.length) {
             data.currentDice = this.gameState.currentDice?.map((die, index) => {
@@ -719,6 +960,11 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         data.hasRematchData = !!this._lastGameConfig;
 
         return data;
+    }
+
+    async _onRender(context, options) {
+        await super._onRender(context, options);
+        this.#syncAutoEndInterval();
     }
 
     score() {
@@ -868,6 +1114,13 @@ class PlayerPick extends foundry.applications.api.HandlebarsApplicationMixin(fou
                 character_id: player.dataset.characteruuid
             })
         }
+
+        // Shuffle players so a random player starts.
+        for (let i = users.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [users[i], users[j]] = [users[j], users[i]];
+        }
+
         const targetScoreInput = this.element.querySelector('.targetScore');
         const targetScore = parseInt(targetScoreInput?.value) || 0;
         game.modules.get(moduleName).api.farkleScorer.resetFarkle(users, targetScore);

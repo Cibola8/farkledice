@@ -24,10 +24,13 @@
                 <button type="button" class="{{ifThen myTurn '' 'hidden'}} icon fas fa-dice" data-action="rollDice" data-tooltip="FARKLE.roll"></button>
             {{/if}}
             {{#if myTurn}}                
-                <button type="button" class="icon fas fa-arrow-right" data-tooltip="FARKLE.endTurn" data-action="endTurn"></button>
+                <button type="button" class="icon fas fa-arrow-right" data-tooltip="FARKLE.endTurn" data-action="endTurn">{{#if autoEndSeconds}} <span class="autoEndSeconds">({{autoEndSeconds}})</span>{{/if}}</button>
+                {{#if canYield}}
+                <button type="button" class="icon fas fa-user-xmark" data-tooltip="FARKLE.yield" data-action="yield"></button>
+                {{/if}}
             {{else}}
             {{#if isGm}}
-                <button type="button" class="icon fas careful fa-arrow-right" data-tooltip="FARKLE.endTurn" data-action="endTurn"></button>
+                <button type="button" class="icon fas careful fa-arrow-right" data-tooltip="FARKLE.endTurn" data-action="endTurn">{{#if autoEndSeconds}} <span class="autoEndSeconds">({{autoEndSeconds}})</span>{{/if}}</button>
             {{/if}}
             {{/if}}
         {{else}}
@@ -37,6 +40,9 @@
         <div class="flexrow" style="margin-left: auto;flex:auto;flex-grow:0;">
             {{#if hasRematchData}}
             <button type="button" class="icon fas fa-redo" data-action="rematch" data-tooltip="FARKLE.rematch"></button>
+            {{/if}}
+            {{#if started}}
+            <button type="button" class="icon fas fa-user-xmark" data-action="removeIdlePlayers" data-tooltip="FARKLE.removeIdlePlayers"></button>
             {{/if}}
             <button type="button"  class="icon fas fa-flag-checkered" data-action="startFarkle"
                 data-tooltip="FARKLE.start"></button>

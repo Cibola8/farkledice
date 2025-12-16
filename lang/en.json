@@ -46,6 +46,15 @@
         "hotDiceMessage": "All dice scored! Roll all 6 again!",
         "hotDicePlayer": "{name} gets to roll all 6 dice again!",
         "rematch": "Rematch with same players",
-        "noRematchData": "No previous game to rematch."
+        "noRematchData": "No previous game to rematch.",
+
+        "yield": "Yield (leave game)",
+        "yieldedInfo": "{name} yielded.",
+        "yieldedChat": "{name} yielded and left the game.",
+
+        "removeIdlePlayers": "Remove idle players",
+        "noIdlePlayers": "No idle players to remove.",
+        "cannotRemoveAllPlayers": "Cannot remove all players.",
+        "removedIdlePlayers": "Removed {count} idle player(s)."
     }
 }

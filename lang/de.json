@@ -47,6 +47,15 @@
         "hotDiceMessage": "Alle Würfel haben gepunktet! Würfle alle 6 erneut!",
         "hotDicePlayer": "{name} darf alle 6 Würfel erneut werfen!",
         "rematch": "Revanche mit denselben Spielern",
-        "noRematchData": "Kein vorheriges Spiel für Revanche."
+        "noRematchData": "Kein vorheriges Spiel für Revanche.",
+
+        "yield": "Aufgeben (Spiel verlassen)",
+        "yieldedInfo": "{name} hat aufgegeben.",
+        "yieldedChat": "{name} hat aufgegeben und das Spiel verlassen.",
+
+        "removeIdlePlayers": "Inaktive Spieler entfernen",
+        "noIdlePlayers": "Keine inaktiven Spieler zum Entfernen.",
+        "cannotRemoveAllPlayers": "Es können nicht alle Spieler entfernt werden.",
+        "removedIdlePlayers": "{count} inaktive Spieler entfernt."
     }
 }
