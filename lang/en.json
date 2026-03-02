@@ -45,12 +45,25 @@
         "hotDiceTitle": "HOT DICE!",
         "hotDiceMessage": "All dice scored! Roll all 6 again!",
         "hotDicePlayer": "{name} gets to roll all 6 dice again!",
+
+        "yourTurnTitle": "Your Turn!",
+        "yourTurnMessage": "Roll the dice!",
+
         "rematch": "Rematch with same players",
         "noRematchData": "No previous game to rematch.",
+
+        "editTargetScore": "Edit Target Score",
+        "editTargetScoreConfirm": "Update",
+        "editTargetScoreMin": "Must be higher than the current top score ({score}). Set to 0 for unlimited.",
+        "editTargetScoreTooLow": "Target score must be higher than the current top score ({score}).",
+        "editTargetScoreUpdated": "Target score updated to {score}.",
 
         "yield": "Yield (leave game)",
         "yieldedInfo": "{name} yielded.",
         "yieldedChat": "{name} yielded and left the game.",
+
+        "autoEndTimer": "Auto-end Timer (seconds)",
+        "autoEndTimerHint": "How many seconds a player has before their turn is automatically ended (e.g. after a Farkle or when out of rolls)",
 
         "removeIdlePlayers": "Remove idle players",
         "noIdlePlayers": "No idle players to remove.",

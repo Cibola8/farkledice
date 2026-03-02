@@ -42,6 +42,20 @@ Hooks.once("ready", () => {
         type: Boolean,
         default: true,
     });
+
+    game.settings.register(moduleName, 'autoEndTimer', {
+        name: 'FARKLE.autoEndTimer',
+        hint: 'FARKLE.autoEndTimerHint',
+        scope: 'world',
+        config: true,
+        type: Number,
+        default: 6,
+        range: {
+            min: 3,
+            max: 120,
+            step: 1,
+        },
+    });
 })
 
 
@@ -81,6 +95,7 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             rematch: this.rematch,
             yield: this.yield,
             removeIdlePlayers: this.removeIdlePlayers,
+            editTargetScore: this.editTargetScore,
         },
     }
 
@@ -92,7 +107,20 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         const sync = !value.skipSync;
         if (!sync) delete value.skipSync;
 
+        const prevTurn = this._gameState?.userTurn;
+        const prevUsers = this._gameState?.users;
+
         this._gameState = foundry.utils.mergeObject(this._gameState, value);
+
+        // Show turn notification when it becomes a player's turn
+        const newTurn = this._gameState?.userTurn;
+        const newUsers = this._gameState?.users;
+        if (newUsers?.length && newTurn != null && (prevTurn !== newTurn || prevUsers !== newUsers)) {
+            const activePlayer = newUsers[newTurn];
+            if (activePlayer?.id === game.user.id) {
+                FarkleScorer.showTurnOverlay();
+            }
+        }
 
         if (sync) {
             game.socket.emit(`module.${moduleName}`, {
@@ -443,6 +471,34 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
         });
     }
 
+    static showTurnOverlay() {
+        // Remove any existing turn overlay
+        document.querySelectorAll('.farkle-overlay.farkle-turn').forEach(el => el.remove());
+
+        const overlay = document.createElement('div');
+        overlay.className = 'farkle-overlay farkle-turn';
+        overlay.innerHTML = `
+            <div class="farkle-overlay-content">
+                <i class="fas fa-dice"></i>
+                <h1>${game.i18n.localize("FARKLE.yourTurnTitle")}</h1>
+                <p>${game.i18n.localize("FARKLE.yourTurnMessage")}</p>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => overlay.classList.add('visible'));
+
+        setTimeout(() => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        }, 1500);
+
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('visible');
+            setTimeout(() => overlay.remove(), 500);
+        });
+    }
+
     static showFarkleOverlay(playerName, broadcast = false) {
         // Broadcast to other players
         if (broadcast) {
@@ -532,6 +588,46 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             lastChanceRound: false
         }
         this.gameState = state;
+    }
+
+    static async editTargetScore(_ev, _target) {
+        if (!game.user.isGM) return;
+        if (!this.gameState?.users?.length) return;
+
+        const currentMax = Math.max(...this.gameState.users.map(u => u.score || 0));
+        const currentTarget = this.gameState.targetScore || 0;
+
+        const content = `
+            <form>
+                <div class="form-group">
+                    <label>${game.i18n.localize('FARKLE.targetScore')}</label>
+                    <input type="number" name="targetScore" value="${currentTarget}" min="${currentMax + 1}" step="100" autofocus/>
+                    <p class="notes">${game.i18n.format('FARKLE.editTargetScoreMin', { score: currentMax })}</p>
+                </div>
+            </form>
+        `;
+
+        const result = await foundry.applications.api.DialogV2.prompt({
+            window: { title: game.i18n.localize('FARKLE.editTargetScore') },
+            content,
+            ok: {
+                label: game.i18n.localize('FARKLE.editTargetScoreConfirm'),
+                callback: (event, button, dialog) => {
+                    return parseInt(button.form.elements.targetScore?.value) || 0;
+                }
+            },
+            rejectClose: false,
+        });
+
+        if (result === null || result === undefined) return;
+
+        if (result > 0 && result <= currentMax) {
+            ui.notifications.warn(game.i18n.format('FARKLE.editTargetScoreTooLow', { score: currentMax }));
+            return;
+        }
+
+        this.gameState = { targetScore: result };
+        ui.notifications.info(game.i18n.format('FARKLE.editTargetScoreUpdated', { score: result || '∞' }));
     }
 
     static rematch(_ev, _target) {
@@ -739,14 +835,10 @@ class FarkleScorer extends foundry.applications.api.HandlebarsApplicationMixin(f
             FarkleScorer.showFarkleOverlay(currentPlayer.name, true);
 
             // Auto-finish the round after a short delay.
-            newState.autoEndAt = Date.now() + 5000;
+            const autoEndMs = (game.settings.get(moduleName, 'autoEndTimer') ?? 15) * 1000;
+            newState.autoEndAt = Date.now() + autoEndMs;
             newState.autoEndTurn = this.gameState.userTurn;
             newState.autoEndReason = 'farkle';
-        } else if (newState.remainingRolls <= 0) {
-            // No rolls remaining: allow a short window to pick dice, then auto-end.
-            newState.autoEndAt = Date.now() + 5000;
-            newState.autoEndTurn = this.gameState.userTurn;
-            newState.autoEndReason = 'no-rolls';
         }
         this.gameState = newState;
     }

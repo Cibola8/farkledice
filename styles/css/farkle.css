@@ -88,6 +88,27 @@
         margin-left: 4px;
         white-space: nowrap;
     }
+
+    .edit-target-btn {
+        border: none;
+        background: none;
+        padding: 0 2px;
+        margin: 0;
+        font-size: 0.75em;
+        opacity: 0.5;
+        min-width: unset;
+        width: auto;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    .yield-btn {
+        margin-left: auto;
+        border-left: 2px solid var(--color-border-light-tertiary, #999);
+        padding-left: 8px;
+    }
 }
 
 .theme-dark {
@@ -258,6 +279,11 @@
     background: rgba(255, 69, 0, 0.85);
 }
 
+.farkle-overlay.farkle-turn {
+    background: rgba(0, 0, 0, 0.55);
+    pointer-events: auto;
+}
+
 .farkle-overlay-content {
     text-align: center;
     color: white;
@@ -277,6 +303,15 @@
     color: #ffd700;
     filter: drop-shadow(0 0 20px orange);
     animation: farkle-fire-pulse 0.5s ease-in-out infinite alternate;
+}
+
+.farkle-turn .farkle-overlay-content i {
+    color: #ccc;
+    font-size: 60px;
+}
+
+.farkle-turn .farkle-overlay-content h1 {
+    font-size: 48px;
 }
 
 .farkle-overlay-content h1 {

@@ -46,12 +46,25 @@
         "hotDiceTitle": "HEISSE WÜRFEL!",
         "hotDiceMessage": "Alle Würfel haben gepunktet! Würfle alle 6 erneut!",
         "hotDicePlayer": "{name} darf alle 6 Würfel erneut werfen!",
+
+        "yourTurnTitle": "Du bist dran!",
+        "yourTurnMessage": "Würfle los!",
+
         "rematch": "Revanche mit denselben Spielern",
         "noRematchData": "Kein vorheriges Spiel für Revanche.",
+
+        "editTargetScore": "Zielpunktzahl ändern",
+        "editTargetScoreConfirm": "Aktualisieren",
+        "editTargetScoreMin": "Muss höher als die aktuelle Höchstpunktzahl ({score}) sein. Auf 0 setzen für unbegrenzt.",
+        "editTargetScoreTooLow": "Zielpunktzahl muss höher als die aktuelle Höchstpunktzahl ({score}) sein.",
+        "editTargetScoreUpdated": "Zielpunktzahl auf {score} aktualisiert.",
 
         "yield": "Aufgeben (Spiel verlassen)",
         "yieldedInfo": "{name} hat aufgegeben.",
         "yieldedChat": "{name} hat aufgegeben und das Spiel verlassen.",
+
+        "autoEndTimer": "Auto-Ende Timer (Sekunden)",
+        "autoEndTimerHint": "Wie viele Sekunden ein Spieler Zeit hat, bevor sein Zug automatisch beendet wird (z.B. nach einem Farkle oder wenn keine Würfe mehr übrig sind)",
 
         "removeIdlePlayers": "Inaktive Spieler entfernen",
         "noIdlePlayers": "Keine inaktiven Spieler zum Entfernen.",
