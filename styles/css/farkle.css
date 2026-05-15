@@ -284,6 +284,14 @@
     pointer-events: auto;
 }
 
+.farkle-turn .farkle-overlay-content {
+    background: rgba(0, 0, 0, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+    padding: 28px 40px;
+}
+
 .farkle-overlay-content {
     text-align: center;
     color: white;
@@ -306,12 +314,21 @@
 }
 
 .farkle-turn .farkle-overlay-content i {
-    color: #ccc;
+    color: #fff;
     font-size: 60px;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85));
 }
 
 .farkle-turn .farkle-overlay-content h1 {
+    color: #fff;
     font-size: 48px;
+    text-shadow: 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 16px rgba(0, 0, 0, 0.8);
+}
+
+.farkle-turn .farkle-overlay-content p {
+    color: #fff;
+    opacity: 1;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
 }
 
 .farkle-overlay-content h1 {
